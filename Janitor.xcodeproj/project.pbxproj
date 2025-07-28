@@ -11,6 +11,11 @@
 		1A2B3C4D5E6F7892 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7893 /* ContentView.swift */; };
 		1A2B3C4D5E6F7894 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7895 /* Assets.xcassets */; };
 		1A2B3C4D5E6F7896 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7897 /* Preview Assets.xcassets */; };
+		2A3B4C5D6E7F8901 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8902 /* Project.swift */; };
+		2A3B4C5D6E7F8903 /* Dependency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8904 /* Dependency.swift */; };
+		2A3B4C5D6E7F8905 /* JanitorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8906 /* JanitorViewModel.swift */; };
+		2A3B4C5D6E7F8907 /* FileSystemScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8908 /* FileSystemScanner.swift */; };
+		2A3B4C5D6E7F8909 /* CommandExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8910 /* CommandExecutor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,6 +25,11 @@
 		1A2B3C4D5E6F7895 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7897 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7899 /* Janitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Janitor.entitlements; sourceTree = "<group>"; };
+		2A3B4C5D6E7F8902 /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+		2A3B4C5D6E7F8904 /* Dependency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dependency.swift; sourceTree = "<group>"; };
+		2A3B4C5D6E7F8906 /* JanitorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JanitorViewModel.swift; sourceTree = "<group>"; };
+		2A3B4C5D6E7F8908 /* FileSystemScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemScanner.swift; sourceTree = "<group>"; };
+		2A3B4C5D6E7F8910 /* CommandExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandExecutor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,6 +56,9 @@
 			children = (
 				1A2B3C4D5E6F7891 /* JanitorApp.swift */,
 				1A2B3C4D5E6F7893 /* ContentView.swift */,
+				2A3B4C5D6E7F8920 /* Models */,
+				2A3B4C5D6E7F8921 /* ViewModels */,
+				2A3B4C5D6E7F8922 /* Services */,
 				1A2B3C4D5E6F7895 /* Assets.xcassets */,
 				1A2B3C4D5E6F7899 /* Janitor.entitlements */,
 				1A2B3C4D5E6F7898 /* Preview Content */,
@@ -67,6 +80,32 @@
 				1A2B3C4D5E6F7897 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		2A3B4C5D6E7F8920 = {
+			isa = PBXGroup;
+			children = (
+				2A3B4C5D6E7F8902 /* Project.swift */,
+				2A3B4C5D6E7F8904 /* Dependency.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		2A3B4C5D6E7F8921 = {
+			isa = PBXGroup;
+			children = (
+				2A3B4C5D6E7F8906 /* JanitorViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		2A3B4C5D6E7F8922 = {
+			isa = PBXGroup;
+			children = (
+				2A3B4C5D6E7F8908 /* FileSystemScanner.swift */,
+				2A3B4C5D6E7F8910 /* CommandExecutor.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -141,6 +180,11 @@
 			files = (
 				1A2B3C4D5E6F7892 /* ContentView.swift in Sources */,
 				1A2B3C4D5E6F7890 /* JanitorApp.swift in Sources */,
+				2A3B4C5D6E7F8901 /* Project.swift in Sources */,
+				2A3B4C5D6E7F8903 /* Dependency.swift in Sources */,
+				2A3B4C5D6E7F8905 /* JanitorViewModel.swift in Sources */,
+				2A3B4C5D6E7F8907 /* FileSystemScanner.swift in Sources */,
+				2A3B4C5D6E7F8909 /* CommandExecutor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
