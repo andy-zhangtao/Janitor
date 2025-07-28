@@ -12,6 +12,10 @@ class JanitorViewModel: ObservableObject {
     @Published var selectedProject: Project? = nil
     @Published var totalCacheSize: Int64 = 0
     @Published var errorMessage: String? = nil
+    @Published var scanDirectories: [URL] = []
+    
+    // MARK: - Private Properties
+    private let scanner = FileSystemScanner()
     
     // MARK: - Computed Properties
     var projectsByLanguage: [ProjectLanguage: [Project]] {
@@ -23,12 +27,28 @@ class JanitorViewModel: ObservableObject {
     }
     
     var canStartScan: Bool {
-        !isScanning
+        !isScanning && !scanDirectories.isEmpty
     }
     
     // MARK: - Public Methods
+    
+    /// 添加扫描目录
+    func addScanDirectory(_ url: URL) {
+        if !scanDirectories.contains(url) {
+            scanDirectories.append(url)
+            saveScanDirectories()
+        }
+    }
+    
+    /// 移除扫描目录
+    func removeScanDirectory(_ url: URL) {
+        scanDirectories.removeAll { $0 == url }
+        saveScanDirectories()
+    }
+    
+    /// 开始扫描
     func startScan() {
-        guard !isScanning else { return }
+        guard !isScanning && !scanDirectories.isEmpty else { return }
         
         Task {
             isScanning = true
@@ -58,6 +78,21 @@ class JanitorViewModel: ObservableObject {
         errorMessage = nil
     }
     
+    /// 初始化扫描目录（应用启动时调用）
+    func initializeScanDirectories() {
+        loadScanDirectories()
+        
+        // 如果没有保存的目录，使用建议目录
+        if scanDirectories.isEmpty {
+            let suggested = scanner.getSuggestedDirectories()
+            if !suggested.isEmpty {
+                // 默认选择第一个建议目录
+                scanDirectories = [suggested[0]]
+                saveScanDirectories()
+            }
+        }
+    }
+    
     // MARK: - Private Methods
     private func performScan() async throws {
         // 扫描所有支持的语言
@@ -80,9 +115,8 @@ class JanitorViewModel: ObservableObject {
     }
     
     private func scanProjectsForLanguage(_ language: ProjectLanguage) async throws -> [Project] {
-        // TODO: 实现具体的语言项目扫描逻辑
-        // 现在返回模拟数据用于测试
-        return generateMockProjects(for: language)
+        // 使用真实的扫描逻辑
+        return try await scanner.scanProjects(in: scanDirectories, for: language)
     }
     
     // MARK: - Mock Data (临时用于开发测试)
@@ -117,6 +151,21 @@ class JanitorViewModel: ObservableObject {
         case .rust:
             return Array(mockProjects.prefix(1))
         }
+    }
+    
+    // MARK: - Persistence
+    
+    private func saveScanDirectories() {
+        let urls = scanDirectories.map { $0.absoluteString }
+        UserDefaults.standard.set(urls, forKey: "ScanDirectories")
+    }
+    
+    private func loadScanDirectories() {
+        guard let urlStrings = UserDefaults.standard.array(forKey: "ScanDirectories") as? [String] else {
+            return
+        }
+        
+        scanDirectories = urlStrings.compactMap { URL(string: $0) }
     }
 }
 

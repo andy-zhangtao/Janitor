@@ -34,22 +34,22 @@ class FileSystemScanner {
         return projects
     }
     
-    /// 扫描用户主目录下的所有项目
-    func scanAllProjects(for language: ProjectLanguage) async throws -> [Project] {
-        let homeDirectory = fileManager.homeDirectoryForCurrentUser
-        let commonDirectories = [
-            homeDirectory.appendingPathComponent("Documents"),
-            homeDirectory.appendingPathComponent("Desktop"),
-            homeDirectory.appendingPathComponent("Developer"),
-            homeDirectory.appendingPathComponent("Projects"),
-            homeDirectory.appendingPathComponent("Code"),
-            homeDirectory.appendingPathComponent("Workspace")
-        ]
-        
+    /// 扫描指定目录列表中的所有项目
+    func scanProjects(in directories: [URL], for language: ProjectLanguage) async throws -> [Project] {
         var allProjects: [Project] = []
         
-        for directory in commonDirectories {
-            guard fileManager.fileExists(atPath: directory.path) else { continue }
+        for directory in directories {
+            // 验证目录是否存在且可访问
+            guard fileManager.fileExists(atPath: directory.path) else {
+                print("目录不存在: \(directory.path)")
+                continue
+            }
+            
+            // 检查读取权限
+            guard fileManager.isReadableFile(atPath: directory.path) else {
+                print("无法读取目录: \(directory.path)")
+                continue
+            }
             
             do {
                 let projects = try await scanForProjects(in: directory, language: language)
@@ -61,6 +61,53 @@ class FileSystemScanner {
         }
         
         return allProjects
+    }
+    
+    /// 获取建议的扫描目录（检查常见开发目录是否存在）
+    func getSuggestedDirectories() -> [URL] {
+        let homeDirectory = fileManager.homeDirectoryForCurrentUser
+        let candidates = [
+            homeDirectory.appendingPathComponent("Developer"),
+            homeDirectory.appendingPathComponent("Projects"),
+            homeDirectory.appendingPathComponent("Code"),
+            homeDirectory.appendingPathComponent("Workspace"),
+            homeDirectory.appendingPathComponent("Documents"),
+            homeDirectory.appendingPathComponent("Desktop")
+        ]
+        
+        return candidates.filter { directory in
+            fileManager.fileExists(atPath: directory.path) && 
+            fileManager.isReadableFile(atPath: directory.path)
+        }
+    }
+    
+    /// 验证目录是否适合扫描
+    func validateDirectory(_ directory: URL) -> DirectoryValidationResult {
+        // 检查目录是否存在
+        guard fileManager.fileExists(atPath: directory.path) else {
+            return .invalid("目录不存在")
+        }
+        
+        // 检查是否为目录
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: directory.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            return .invalid("路径不是目录")
+        }
+        
+        // 检查读取权限
+        guard fileManager.isReadableFile(atPath: directory.path) else {
+            return .invalid("无读取权限")
+        }
+        
+        // 估算潜在项目数量（快速扫描）
+        let projectCount = estimateProjectCount(in: directory)
+        
+        if projectCount == 0 {
+            return .warning("该目录下未发现开发项目")
+        } else {
+            return .valid("发现约 \(projectCount) 个潜在项目")
+        }
     }
     
     /// 计算目录大小
@@ -136,6 +183,42 @@ class FileSystemScanner {
         let resourceValues = try directory.resourceValues(forKeys: [.contentModificationDateKey])
         return resourceValues.contentModificationDate ?? Date()
     }
+    
+    /// 快速估算目录中的项目数量（用于验证提示）
+    private func estimateProjectCount(in directory: URL) -> Int {
+        var projectCount = 0
+        let projectFiles = ["go.mod", "package.json", "requirements.txt", "Cargo.toml", "pyproject.toml"]
+        
+        // 快速扫描，最多扫描前100个文件
+        var scannedCount = 0
+        let maxScanCount = 100
+        
+        guard let enumerator = fileManager.enumerator(
+            at: directory,
+            includingPropertiesForKeys: [.nameKey, .isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return 0
+        }
+        
+        for case let fileURL as URL in enumerator {
+            scannedCount += 1
+            if scannedCount > maxScanCount { break }
+            
+            do {
+                let resourceValues = try fileURL.resourceValues(forKeys: [.nameKey, .isDirectoryKey])
+                if resourceValues.isDirectory == false,
+                   let fileName = resourceValues.name,
+                   projectFiles.contains(fileName) {
+                    projectCount += 1
+                }
+            } catch {
+                continue
+            }
+        }
+        
+        return projectCount
+    }
 }
 
 // MARK: - Error Types
@@ -152,6 +235,51 @@ enum FileSystemError: LocalizedError {
             return "访问路径权限不足: \(path)"
         case .pathNotFound(let path):
             return "路径不存在: \(path)"
+        }
+    }
+}
+
+// MARK: - Directory Validation
+enum DirectoryValidationResult {
+    case valid(String)      // 有效，附带描述信息
+    case warning(String)    // 警告，可以使用但需要提示
+    case invalid(String)    // 无效，不能使用
+    
+    var isUsable: Bool {
+        switch self {
+        case .valid, .warning:
+            return true
+        case .invalid:
+            return false
+        }
+    }
+    
+    var message: String {
+        switch self {
+        case .valid(let msg), .warning(let msg), .invalid(let msg):
+            return msg
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .valid:
+            return "checkmark.circle.fill"
+        case .warning:
+            return "exclamationmark.triangle.fill"
+        case .invalid:
+            return "xmark.circle.fill"
+        }
+    }
+    
+    var color: String {
+        switch self {
+        case .valid:
+            return "green"
+        case .warning:
+            return "orange"
+        case .invalid:
+            return "red"
         }
     }
 }

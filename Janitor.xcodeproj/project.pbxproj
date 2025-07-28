@@ -16,6 +16,7 @@
 		2A3B4C5D6E7F8905 /* JanitorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8906 /* JanitorViewModel.swift */; };
 		2A3B4C5D6E7F8907 /* FileSystemScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8908 /* FileSystemScanner.swift */; };
 		2A3B4C5D6E7F8909 /* CommandExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8910 /* CommandExecutor.swift */; };
+		3B4C5D6E7F890123 /* DirectorySelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B4C5D6E7F890124 /* DirectorySelectionView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		2A3B4C5D6E7F8906 /* JanitorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JanitorViewModel.swift; sourceTree = "<group>"; };
 		2A3B4C5D6E7F8908 /* FileSystemScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemScanner.swift; sourceTree = "<group>"; };
 		2A3B4C5D6E7F8910 /* CommandExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandExecutor.swift; sourceTree = "<group>"; };
+		3B4C5D6E7F890124 /* DirectorySelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectorySelectionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +61,7 @@
 				2A3B4C5D6E7F8920 /* Models */,
 				2A3B4C5D6E7F8921 /* ViewModels */,
 				2A3B4C5D6E7F8922 /* Services */,
+				3B4C5D6E7F890125 /* Views */,
 				1A2B3C4D5E6F7895 /* Assets.xcassets */,
 				1A2B3C4D5E6F7899 /* Janitor.entitlements */,
 				1A2B3C4D5E6F7898 /* Preview Content */,
@@ -106,6 +109,14 @@
 				2A3B4C5D6E7F8910 /* CommandExecutor.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		3B4C5D6E7F890125 = {
+			isa = PBXGroup;
+			children = (
+				3B4C5D6E7F890124 /* DirectorySelectionView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -185,6 +196,7 @@
 				2A3B4C5D6E7F8905 /* JanitorViewModel.swift in Sources */,
 				2A3B4C5D6E7F8907 /* FileSystemScanner.swift in Sources */,
 				2A3B4C5D6E7F8909 /* CommandExecutor.swift in Sources */,
+				3B4C5D6E7F890123 /* DirectorySelectionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,7 +227,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;

@@ -24,6 +24,9 @@ struct ContentView: View {
                 Text(errorMessage)
             }
         }
+        .onAppear {
+            viewModel.initializeScanDirectories()
+        }
     }
 }
 
@@ -58,8 +61,8 @@ struct SidebarView: View {
             }
             
             Section("Settings") {
-                NavigationLink("Preferences") {
-                    SettingsView()
+                NavigationLink("扫描目录配置") {
+                    SettingsView(viewModel: viewModel)
                 }
             }
         }
@@ -133,6 +136,18 @@ struct DashboardContentView: View {
                     .font(.body)
                     .foregroundColor(.secondary)
                     .padding(.top)
+            } else if viewModel.scanDirectories.isEmpty {
+                VStack(spacing: 8) {
+                    Text("请先选择要扫描的目录")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                    
+                    NavigationLink("配置扫描目录") {
+                        DirectorySelectionView(viewModel: viewModel)
+                    }
+                    .buttonStyle(.borderless)
+                }
+                .padding(.top)
             } else {
                 Text("Click 'Start Scan' to analyze your development environment")
                     .font(.body)
@@ -338,16 +353,10 @@ struct EmptyProjectsView: View {
 }
 
 struct SettingsView: View {
+    @ObservedObject var viewModel: JanitorViewModel
+    
     var body: some View {
-        VStack {
-            Text("Settings")
-                .font(.title)
-                .fontWeight(.bold)
-                .padding()
-            
-            Text("This will show application preferences")
-                .foregroundColor(.secondary)
-        }
+        DirectorySelectionView(viewModel: viewModel)
     }
 }
 
