@@ -2,6 +2,7 @@ import Foundation
 
 class FileSystemScanner {
     private let fileManager = FileManager.default
+    private let commandExecutor = CommandExecutor()
     
     // MARK: - Public Methods
     
@@ -19,13 +20,17 @@ class FileSystemScanner {
             let projectName = projectDirectory.lastPathComponent
             let lastModified = try getLastModifiedDate(for: projectDirectory)
             
+            // 分析项目依赖
+            let dependencies = await analyzeDependencies(for: language, in: projectDirectory)
+            let cacheSize = await calculateCacheSize(for: language, in: projectDirectory)
+            
             let project = Project(
                 name: projectName,
                 path: projectDirectory,
                 language: language,
                 lastModified: lastModified,
-                dependencies: [],
-                cacheSize: 0
+                dependencies: dependencies,
+                cacheSize: cacheSize
             )
             
             projects.append(project)
@@ -218,6 +223,284 @@ class FileSystemScanner {
         }
         
         return projectCount
+    }
+    
+    /// 分析项目依赖
+    private func analyzeDependencies(for language: ProjectLanguage, in projectDirectory: URL) async -> [Dependency] {
+        switch language {
+        case .go:
+            return await analyzeGoDependencies(in: projectDirectory)
+        case .nodejs:
+            return await analyzeNodeDependencies(in: projectDirectory)
+        case .python:
+            return await analyzePythonDependencies(in: projectDirectory)
+        case .rust:
+            return await analyzeRustDependencies(in: projectDirectory)
+        }
+    }
+    
+    /// 计算项目缓存大小
+    private func calculateCacheSize(for language: ProjectLanguage, in projectDirectory: URL) async -> Int64 {
+        switch language {
+        case .go:
+            return await calculateGoCacheSize(in: projectDirectory)
+        case .nodejs:
+            return await calculateNodeCacheSize(in: projectDirectory)
+        case .python:
+            return await calculatePythonCacheSize(in: projectDirectory)
+        case .rust:
+            return await calculateRustCacheSize(in: projectDirectory)
+        }
+    }
+    
+    // MARK: - Go项目分析
+    
+    private func analyzeGoDependencies(in projectDirectory: URL) async -> [Dependency] {
+        do {
+            // 检查go命令是否存在
+            guard await commandExecutor.commandExists("go") else {
+                return []
+            }
+            
+            let modules = try await commandExecutor.getGoModules(in: projectDirectory)
+            var dependencies: [Dependency] = []
+            
+            for moduleString in modules {
+                // 解析模块字符串，格式: module_name version [replace]
+                let components = moduleString.components(separatedBy: " ")
+                guard components.count >= 2 else { continue }
+                
+                let name = components[0]
+                let version = components[1]
+                
+                // 跳过主模块（通常第一行）
+                if moduleString.contains("=>") || name == projectDirectory.lastPathComponent {
+                    continue
+                }
+                
+                let dependency = Dependency(
+                    name: name,
+                    version: version,
+                    size: 0, // 稍后计算
+                    cachePath: nil,
+                    isOrphaned: false
+                )
+                dependencies.append(dependency)
+            }
+            
+            return dependencies
+        } catch {
+            print("获取Go模块列表失败: \(error)")
+            return []
+        }
+    }
+    
+    private func calculateGoCacheSize(in projectDirectory: URL) async -> Int64 {
+        do {
+            // 获取Go模块缓存路径
+            _ = try await commandExecutor.getGoModCache()
+            
+            // 计算项目相关的缓存大小
+            // 这里简化处理，实际应该只计算项目使用的模块
+            let vendorPath = projectDirectory.appendingPathComponent("vendor")
+            if fileManager.fileExists(atPath: vendorPath.path) {
+                return try await calculateDirectorySize(vendorPath)
+            }
+            
+            // 如果没有vendor目录，估算缓存大小
+            return 50 * 1024 * 1024 // 50MB估算值
+        } catch {
+            return 0
+        }
+    }
+    
+    // MARK: - Node.js项目分析
+    
+    private func analyzeNodeDependencies(in projectDirectory: URL) async -> [Dependency] {
+        do {
+            // 检查npm命令是否存在
+            guard await commandExecutor.commandExists("npm") else {
+                return []
+            }
+            
+            let packages = try await commandExecutor.getNpmPackages(in: projectDirectory)
+            return packages.map { package in
+                Dependency(
+                    name: package.name,
+                    version: package.version,
+                    size: 0,
+                    cachePath: nil,
+                    isOrphaned: false
+                )
+            }
+        } catch {
+            print("获取npm包列表失败: \(error)")
+            return []
+        }
+    }
+    
+    private func calculateNodeCacheSize(in projectDirectory: URL) async -> Int64 {
+        let nodeModulesPath = projectDirectory.appendingPathComponent("node_modules")
+        if fileManager.fileExists(atPath: nodeModulesPath.path) {
+            do {
+                return try await calculateDirectorySize(nodeModulesPath)
+            } catch {
+                return 0
+            }
+        }
+        return 0
+    }
+    
+    // MARK: - Python项目分析
+    
+    private func analyzePythonDependencies(in projectDirectory: URL) async -> [Dependency] {
+        var dependencies: [Dependency] = []
+        
+        // 检查requirements.txt
+        let requirementsPath = projectDirectory.appendingPathComponent("requirements.txt")
+        if fileManager.fileExists(atPath: requirementsPath.path) {
+            dependencies.append(contentsOf: await parseRequirementsTxt(at: requirementsPath))
+        }
+        
+        // 检查pyproject.toml
+        let pyprojectPath = projectDirectory.appendingPathComponent("pyproject.toml")
+        if fileManager.fileExists(atPath: pyprojectPath.path) {
+            dependencies.append(contentsOf: await parsePyprojectToml(at: pyprojectPath))
+        }
+        
+        return dependencies
+    }
+    
+    private func parseRequirementsTxt(at path: URL) async -> [Dependency] {
+        do {
+            let content = try String(contentsOf: path)
+            var dependencies: [Dependency] = []
+            
+            for line in content.components(separatedBy: .newlines) {
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty && !trimmed.hasPrefix("#") else { continue }
+                
+                // 解析包名和版本 (例: package>=1.0.0)
+                let components = trimmed.components(separatedBy: CharacterSet(charactersIn: ">=<~!"))
+                let name = components[0].trimmingCharacters(in: .whitespacesAndNewlines)
+                let version = components.count > 1 ? components[1] : "unknown"
+                
+                let dependency = Dependency(
+                    name: name,
+                    version: version,
+                    size: 0,
+                    cachePath: nil,
+                    isOrphaned: false
+                )
+                dependencies.append(dependency)
+            }
+            
+            return dependencies
+        } catch {
+            return []
+        }
+    }
+    
+    private func parsePyprojectToml(at path: URL) async -> [Dependency] {
+        // 简化实现：需要TOML解析器来正确处理
+        // 这里先返回空数组，之后可以添加真正的TOML解析
+        return []
+    }
+    
+    private func calculatePythonCacheSize(in projectDirectory: URL) async -> Int64 {
+        var totalSize: Int64 = 0
+        
+        // 检查项目级别的缓存目录
+        let projectCachePaths = [
+            projectDirectory.appendingPathComponent("__pycache__"),
+            projectDirectory.appendingPathComponent(".pytest_cache"),
+            projectDirectory.appendingPathComponent("venv"),
+            projectDirectory.appendingPathComponent(".venv"),
+            projectDirectory.appendingPathComponent(".mypy_cache"),
+            projectDirectory.appendingPathComponent(".tox")
+        ]
+        
+        for cachePath in projectCachePaths {
+            if fileManager.fileExists(atPath: cachePath.path) {
+                do {
+                    totalSize += try await calculateDirectorySize(cachePath)
+                } catch {
+                    continue
+                }
+            }
+        }
+        
+        // 递归查找所有__pycache__目录
+        do {
+            let pycacheSize = try await findAllPycacheDirectories(in: projectDirectory)
+            totalSize += pycacheSize
+        } catch {
+            print("查找__pycache__目录失败: \(error)")
+        }
+        
+        return totalSize
+    }
+    
+    /// 递归查找所有__pycache__目录并计算大小
+    private func findAllPycacheDirectories(in directory: URL) async throws -> Int64 {
+        var totalSize: Int64 = 0
+        
+        guard let enumerator = fileManager.enumerator(
+            at: directory,
+            includingPropertiesForKeys: [.isDirectoryKey, .nameKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return 0
+        }
+        
+        for case let fileURL as URL in enumerator {
+            do {
+                let resourceValues = try fileURL.resourceValues(forKeys: [.isDirectoryKey, .nameKey])
+                
+                if resourceValues.isDirectory == true && resourceValues.name == "__pycache__" {
+                    let size = try await calculateDirectorySize(fileURL)
+                    totalSize += size
+                    
+                    // 跳过该目录的子内容
+                    enumerator.skipDescendants()
+                }
+            } catch {
+                continue
+            }
+        }
+        
+        return totalSize
+    }
+    
+    // MARK: - Rust项目分析
+    
+    private func analyzeRustDependencies(in projectDirectory: URL) async -> [Dependency] {
+        let cargoPath = projectDirectory.appendingPathComponent("Cargo.toml")
+        guard fileManager.fileExists(atPath: cargoPath.path) else {
+            return []
+        }
+        
+        // 简化实现：解析Cargo.toml需要TOML解析器
+        // 这里先返回一些模拟数据
+        return []
+    }
+    
+    private func calculateRustCacheSize(in projectDirectory: URL) async -> Int64 {
+        do {
+            // 使用命令行工具获取更快的大小计算
+            return try await commandExecutor.getRustTargetSize(in: projectDirectory)
+        } catch {
+            // 如果命令行失败，回退到目录遍历
+            let targetPath = projectDirectory.appendingPathComponent("target")
+            if fileManager.fileExists(atPath: targetPath.path) {
+                do {
+                    return try await calculateDirectorySize(targetPath)
+                } catch {
+                    return 0
+                }
+            }
+            return 0
+        }
     }
 }
 

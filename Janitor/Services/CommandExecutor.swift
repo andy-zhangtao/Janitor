@@ -113,8 +113,20 @@ class CommandExecutor {
         return URL(fileURLWithPath: cachePath)
     }
     
+    /// 获取npm全局缓存路径
+    func getNpmCachePath() async throws -> URL {
+        let result = try await executeCommand("npm", arguments: ["config", "get", "cache"])
+        let cachePath = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !cachePath.isEmpty else {
+            throw CommandError.invalidOutput("npm缓存路径为空")
+        }
+        
+        return URL(fileURLWithPath: cachePath)
+    }
+    
     /// 获取Node.js包信息
-    func getNpmPackages(in projectPath: URL) async throws -> [String] {
+    func getNpmPackages(in projectPath: URL) async throws -> [(name: String, version: String)] {
         let result = try await executeCommand(
             "npm",
             arguments: ["list", "--depth=0", "--json"],
@@ -124,11 +136,63 @@ class CommandExecutor {
         // 解析JSON输出
         guard let data = result.output.data(using: .utf8),
               let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let dependencies = json["dependencies"] as? [String: Any] else {
+              let dependencies = json["dependencies"] as? [String: [String: Any]] else {
             return []
         }
         
-        return Array(dependencies.keys)
+        return dependencies.compactMap { (name, info) in
+            let version = info["version"] as? String ?? "unknown"
+            return (name: name, version: version)
+        }
+    }
+    
+    /// 获取pip缓存路径
+    func getPipCachePath() async throws -> URL {
+        let result = try await executeCommand("pip", arguments: ["cache", "dir"])
+        let cachePath = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !cachePath.isEmpty else {
+            throw CommandError.invalidOutput("pip缓存路径为空")
+        }
+        
+        return URL(fileURLWithPath: cachePath)
+    }
+    
+    /// 获取Cargo缓存路径
+    func getCargoCachePath() async throws -> URL {
+        // Cargo使用环境变量CARGO_HOME，默认为~/.cargo
+        let result = try await executeCommand("cargo", arguments: ["--version"])
+        // 检查cargo是否可用
+        guard result.isSuccess else {
+            throw CommandError.commandNotFound("cargo")
+        }
+        
+        // 返回默认的cargo路径
+        let homeDir = FileManager.default.homeDirectoryForCurrentUser
+        return homeDir.appendingPathComponent(".cargo")
+    }
+    
+    /// 获取Rust目标目录大小（项目级别的缓存）
+    func getRustTargetSize(in projectPath: URL) async throws -> Int64 {
+        let targetPath = projectPath.appendingPathComponent("target")
+        guard FileManager.default.fileExists(atPath: targetPath.path) else {
+            return 0
+        }
+        
+        // 使用du命令快速计算大小
+        let result = try await executeCommand(
+            "du",
+            arguments: ["-s", "-k", targetPath.path]
+        )
+        
+        let output = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+        let components = output.components(separatedBy: "\t")
+        guard let sizeString = components.first,
+              let sizeKB = Int64(sizeString) else {
+            return 0
+        }
+        
+        return sizeKB * 1024 // 转换为字节
     }
 }
 
