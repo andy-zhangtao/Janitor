@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(mkdir:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(open /Users/zhangtao/Library/Developer/Xcode/DerivedData/Janitor-gsjvytoycqbyorbfxruhefblgufh/Build/Products/Debug/Janitor.app)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}
