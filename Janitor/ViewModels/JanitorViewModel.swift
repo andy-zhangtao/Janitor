@@ -16,6 +16,8 @@ class JanitorViewModel: ObservableObject {
     
     // MARK: - Private Properties
     private let scanner = FileSystemScanner()
+    private let cleanupService = CleanupService()
+    private let commandExecutor = CommandExecutor()
     
     // MARK: - Computed Properties
     var projectsByLanguage: [ProjectLanguage: [Project]] {
@@ -166,6 +168,143 @@ class JanitorViewModel: ObservableObject {
         }
         
         scanDirectories = urlStrings.compactMap { URL(string: $0) }
+    }
+    
+    // MARK: - 清理功能
+    
+    /// 清理单个项目缓存
+    func cleanProjectCache(_ project: Project) {
+        Task {
+            let result = await cleanupService.performCleanup(.projectCache(project))
+            
+            await MainActor.run {
+                switch result {
+                case .success(let message, let savedBytes):
+                    // 更新项目缓存大小
+                    if let index = projects.firstIndex(where: { $0.id == project.id }) {
+                        var updatedProject = projects[index]
+                        // 创建新的项目实例，因为Project是struct
+                        let newProject = Project(
+                            name: updatedProject.name,
+                            path: updatedProject.path,
+                            language: updatedProject.language,
+                            lastModified: updatedProject.lastModified,
+                            dependencies: updatedProject.dependencies,
+                            cacheSize: max(0, updatedProject.cacheSize - savedBytes)
+                        )
+                        projects[index] = newProject
+                        
+                        // 更新总缓存大小
+                        totalCacheSize = max(0, totalCacheSize - savedBytes)
+                    }
+                    
+                    print("清理成功: \(message), 释放: \(ByteCountFormatter.string(fromByteCount: savedBytes, countStyle: .file))")
+                    
+                case .failure(let error):
+                    errorMessage = error
+                    
+                case .skipped(let reason):
+                    print("跳过清理: \(reason)")
+                }
+            }
+        }
+    }
+    
+    /// 清理全局语言缓存
+    func cleanGlobalCache(for language: ProjectLanguage) {
+        Task {
+            let result = await cleanupService.performCleanup(.globalCache(language))
+            
+            await MainActor.run {
+                switch result {
+                case .success(let message, _):
+                    print("清理成功: \(message)")
+                    
+                case .failure(let error):
+                    errorMessage = error
+                    
+                case .skipped(let reason):
+                    print("跳过清理: \(reason)")
+                }
+            }
+        }
+    }
+    
+    /// 清理项目依赖
+    func pruneDependencies(_ project: Project) {
+        Task {
+            let result = await cleanupService.performCleanup(.dependencyPrune(project))
+            
+            await MainActor.run {
+                switch result {
+                case .success(let message, _):
+                    print("依赖清理成功: \(message)")
+                    // 重新扫描项目以获取更新的依赖信息
+                    refreshProject(project)
+                    
+                case .failure(let error):
+                    errorMessage = error
+                    
+                case .skipped(let reason):
+                    print("跳过依赖清理: \(reason)")
+                }
+            }
+        }
+    }
+    
+    /// 批量清理选中的项目
+    func cleanSelectedProjects(_ projects: [Project]) {
+        Task {
+            var totalSaved: Int64 = 0
+            var successCount = 0
+            var failureCount = 0
+            
+            for project in projects {
+                let result = await cleanupService.performCleanup(.projectCache(project))
+                
+                switch result {
+                case .success(_, let savedBytes):
+                    totalSaved += savedBytes
+                    successCount += 1
+                    
+                case .failure(_):
+                    failureCount += 1
+                    
+                case .skipped(_):
+                    break
+                }
+            }
+            
+            await MainActor.run {
+                totalCacheSize = max(0, totalCacheSize - totalSaved)
+                
+                let message = "批量清理完成: \(successCount)个成功, \(failureCount)个失败, 释放\(ByteCountFormatter.string(fromByteCount: totalSaved, countStyle: .file))"
+                print(message)
+            }
+        }
+    }
+    
+    @Published var diagnosisResult: String? = nil
+    @Published var showingDiagnosis = false
+    
+    /// 诊断开发环境
+    func diagnoseEnvironment() {
+        Task {
+            let diagnosis = await commandExecutor.diagnoseEnvironment()
+            
+            await MainActor.run {
+                var message = "开发环境诊断结果:\n\n"
+                for (tool, status) in diagnosis.sorted(by: { $0.key < $1.key }) {
+                    if tool != "PATH" {
+                        message += "\(tool): \(status)\n"
+                    }
+                }
+                
+                diagnosisResult = message
+                showingDiagnosis = true
+                print(message)
+            }
+        }
     }
 }
 

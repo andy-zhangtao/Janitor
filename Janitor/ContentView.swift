@@ -24,6 +24,15 @@ struct ContentView: View {
                 Text(errorMessage)
             }
         }
+        .alert("开发环境诊断", isPresented: $viewModel.showingDiagnosis) {
+            Button("确定") {
+                viewModel.showingDiagnosis = false
+            }
+        } message: {
+            if let result = viewModel.diagnosisResult {
+                Text(result)
+            }
+        }
         .onAppear {
             viewModel.initializeScanDirectories()
         }
@@ -63,6 +72,14 @@ struct SidebarView: View {
             Section("Settings") {
                 NavigationLink("扫描目录配置") {
                     SettingsView(viewModel: viewModel)
+                }
+                
+                NavigationLink("开发工具配置") {
+                    ToolConfigurationView(viewModel: viewModel)
+                }
+                
+                Button("诊断开发环境") {
+                    viewModel.diagnoseEnvironment()
                 }
             }
         }
@@ -189,7 +206,7 @@ struct DetailView: View {
     var body: some View {
         VStack {
             if let selectedProject = viewModel.selectedProject {
-                ProjectDetailView(project: selectedProject)
+                ProjectDetailView(project: selectedProject, viewModel: viewModel)
             } else {
                 Text("Select a project to view details")
                     .font(.body)
@@ -203,6 +220,9 @@ struct DetailView: View {
 
 struct ProjectDetailView: View {
     let project: Project
+    @ObservedObject var viewModel: JanitorViewModel
+    @State private var showingCleanConfirmation = false
+    @State private var showingPruneConfirmation = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -227,11 +247,52 @@ struct ProjectDetailView: View {
                 DetailRow(label: "Last Modified", value: project.formattedLastModified)
                 DetailRow(label: "Cache Size", value: project.formattedCacheSize)
                 DetailRow(label: "Status", value: project.isActive ? "Active" : "Inactive")
+                DetailRow(label: "Dependencies", value: "\(project.dependencies.count) packages")
+            }
+            
+            Divider()
+            
+            // 清理操作按钮
+            VStack(alignment: .leading, spacing: 8) {
+                Text("清理操作")
+                    .font(.headline)
+                
+                HStack {
+                    if project.cacheSize > 0 {
+                        Button("清理缓存") {
+                            showingCleanConfirmation = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    
+                    if project.language == .go || project.language == .nodejs {
+                        Button("清理依赖") {
+                            showingPruneConfirmation = true
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
             }
             
             Spacer()
         }
         .padding()
+        .alert("确认清理缓存", isPresented: $showingCleanConfirmation) {
+            Button("取消", role: .cancel) { }
+            Button("清理", role: .destructive) {
+                viewModel.cleanProjectCache(project)
+            }
+        } message: {
+            Text("确定要清理 \(project.name) 的缓存吗？\n将释放约 \(project.formattedCacheSize) 的空间。")
+        }
+        .alert("确认清理依赖", isPresented: $showingPruneConfirmation) {
+            Button("取消", role: .cancel) { }
+            Button("清理", role: .destructive) {
+                viewModel.pruneDependencies(project)
+            }
+        } message: {
+            Text("确定要清理 \(project.name) 的无用依赖吗？\n这将执行 \(project.language == .go ? "go mod tidy" : "npm prune") 命令。")
+        }
     }
 }
 
@@ -281,7 +342,7 @@ struct ProjectListView: View {
     
     var body: some View {
         List(projects) { project in
-            ProjectRowView(project: project)
+            ProjectRowView(project: project, viewModel: viewModel)
                 .onTapGesture {
                     viewModel.selectedProject = project
                 }
@@ -291,6 +352,8 @@ struct ProjectListView: View {
 
 struct ProjectRowView: View {
     let project: Project
+    @ObservedObject var viewModel: JanitorViewModel
+    @State private var showingCleanConfirmation = false
     
     var body: some View {
         HStack {
@@ -316,8 +379,25 @@ struct ProjectRowView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
+            
+            // 清理按钮
+            if project.cacheSize > 0 {
+                Button("清理") {
+                    showingCleanConfirmation = true
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
         }
         .padding(.vertical, 4)
+        .alert("确认清理", isPresented: $showingCleanConfirmation) {
+            Button("取消", role: .cancel) { }
+            Button("清理", role: .destructive) {
+                viewModel.cleanProjectCache(project)
+            }
+        } message: {
+            Text("确定要清理 \(project.name) 的缓存吗？\n将释放约 \(project.formattedCacheSize) 的空间。")
+        }
     }
 }
 

@@ -16,7 +16,10 @@
 		2A3B4C5D6E7F8905 /* JanitorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8906 /* JanitorViewModel.swift */; };
 		2A3B4C5D6E7F8907 /* FileSystemScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8908 /* FileSystemScanner.swift */; };
 		2A3B4C5D6E7F8909 /* CommandExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8910 /* CommandExecutor.swift */; };
+		2A3B4C5D6E7F8911 /* CleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F8912 /* CleanupService.swift */; };
 		3B4C5D6E7F890123 /* DirectorySelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B4C5D6E7F890124 /* DirectorySelectionView.swift */; };
+		4C5D6E7F89012345 /* ToolSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5D6E7F89012346 /* ToolSettings.swift */; };
+		4C5D6E7F89012347 /* ToolConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5D6E7F89012348 /* ToolConfigurationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,7 +34,10 @@
 		2A3B4C5D6E7F8906 /* JanitorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JanitorViewModel.swift; sourceTree = "<group>"; };
 		2A3B4C5D6E7F8908 /* FileSystemScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemScanner.swift; sourceTree = "<group>"; };
 		2A3B4C5D6E7F8910 /* CommandExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandExecutor.swift; sourceTree = "<group>"; };
+		2A3B4C5D6E7F8912 /* CleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupService.swift; sourceTree = "<group>"; };
 		3B4C5D6E7F890124 /* DirectorySelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectorySelectionView.swift; sourceTree = "<group>"; };
+		4C5D6E7F89012346 /* ToolSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolSettings.swift; sourceTree = "<group>"; };
+		4C5D6E7F89012348 /* ToolConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolConfigurationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +96,7 @@
 			children = (
 				2A3B4C5D6E7F8902 /* Project.swift */,
 				2A3B4C5D6E7F8904 /* Dependency.swift */,
+				4C5D6E7F89012346 /* ToolSettings.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -107,6 +114,7 @@
 			children = (
 				2A3B4C5D6E7F8908 /* FileSystemScanner.swift */,
 				2A3B4C5D6E7F8910 /* CommandExecutor.swift */,
+				2A3B4C5D6E7F8912 /* CleanupService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -115,6 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				3B4C5D6E7F890124 /* DirectorySelectionView.swift */,
+				4C5D6E7F89012348 /* ToolConfigurationView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -196,7 +205,10 @@
 				2A3B4C5D6E7F8905 /* JanitorViewModel.swift in Sources */,
 				2A3B4C5D6E7F8907 /* FileSystemScanner.swift in Sources */,
 				2A3B4C5D6E7F8909 /* CommandExecutor.swift in Sources */,
+				2A3B4C5D6E7F8911 /* CleanupService.swift in Sources */,
 				3B4C5D6E7F890123 /* DirectorySelectionView.swift in Sources */,
+				4C5D6E7F89012345 /* ToolSettings.swift in Sources */,
+				4C5D6E7F89012347 /* ToolConfigurationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
