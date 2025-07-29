@@ -41,7 +41,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		1A2B3C4D5E6F7881 = {
+		1A2B3C4D5E6F7881 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -59,7 +59,7 @@
 			);
 			sourceTree = "<group>";
 		};
-		1A2B3C4D5E6F7883 = {
+		1A2B3C4D5E6F7883 /* Janitor */ = {
 			isa = PBXGroup;
 			children = (
 				1A2B3C4D5E6F7891 /* JanitorApp.swift */,
@@ -75,7 +75,7 @@
 			path = Janitor;
 			sourceTree = "<group>";
 		};
-		1A2B3C4D5E6F7884 = {
+		1A2B3C4D5E6F7884 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				1A2B3C4D5E6F7880 /* Janitor.app */,
@@ -83,7 +83,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		1A2B3C4D5E6F7898 = {
+		1A2B3C4D5E6F7898 /* Preview Content */ = {
 			isa = PBXGroup;
 			children = (
 				1A2B3C4D5E6F7897 /* Preview Assets.xcassets */,
@@ -91,7 +91,7 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		2A3B4C5D6E7F8920 = {
+		2A3B4C5D6E7F8920 /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				2A3B4C5D6E7F8902 /* Project.swift */,
@@ -101,7 +101,7 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		2A3B4C5D6E7F8921 = {
+		2A3B4C5D6E7F8921 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
 				2A3B4C5D6E7F8906 /* JanitorViewModel.swift */,
@@ -109,7 +109,7 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
-		2A3B4C5D6E7F8922 = {
+		2A3B4C5D6E7F8922 /* Services */ = {
 			isa = PBXGroup;
 			children = (
 				2A3B4C5D6E7F8908 /* FileSystemScanner.swift */,
@@ -119,7 +119,7 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
-		3B4C5D6E7F890125 = {
+		3B4C5D6E7F890125 /* Views */ = {
 			isa = PBXGroup;
 			children = (
 				3B4C5D6E7F890124 /* DirectorySelectionView.swift */,
@@ -131,7 +131,7 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1A2B3C4D5E6F7885 = {
+		1A2B3C4D5E6F7885 /* Janitor */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1A2B3C4D5E6F789A /* Build configuration list for PBXNativeTarget "Janitor" */;
 			buildPhases = (
@@ -151,7 +151,7 @@
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		1A2B3C4D5E6F7888 = {
+		1A2B3C4D5E6F7888 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
@@ -182,7 +182,7 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		1A2B3C4D5E6F7887 = {
+		1A2B3C4D5E6F7887 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -194,7 +194,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1A2B3C4D5E6F7886 = {
+		1A2B3C4D5E6F7886 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -215,7 +215,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		1A2B3C4D5E6F789B = {
+		1A2B3C4D5E6F789B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -278,7 +278,7 @@
 			};
 			name = Debug;
 		};
-		1A2B3C4D5E6F789C = {
+		1A2B3C4D5E6F789C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -333,7 +333,7 @@
 			};
 			name = Release;
 		};
-		1A2B3C4D5E6F789D = {
+		1A2B3C4D5E6F789D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -343,6 +343,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Janitor/Preview Content\"";
+				DEVELOPMENT_TEAM = N33BWHJDRQ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Janitor;
@@ -352,15 +353,16 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.Janitor;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.devexp.janitor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
-		1A2B3C4D5E6F789E = {
+		1A2B3C4D5E6F789E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -370,6 +372,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Janitor/Preview Content\"";
+				DEVELOPMENT_TEAM = N33BWHJDRQ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Janitor;
@@ -379,8 +382,9 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.Janitor;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.devexp.janitor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -390,7 +394,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1A2B3C4D5E6F7889 = {
+		1A2B3C4D5E6F7889 /* Build configuration list for PBXProject "Janitor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1A2B3C4D5E6F789B /* Debug */,
@@ -399,7 +403,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1A2B3C4D5E6F789A = {
+		1A2B3C4D5E6F789A /* Build configuration list for PBXNativeTarget "Janitor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1A2B3C4D5E6F789D /* Debug */,

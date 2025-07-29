@@ -16,7 +16,12 @@
       "Bash(open build/DerivedData/Build/Products/Debug/Janitor.app)",
       "Bash(ls:*)",
       "Bash(/opt/homebrew/bin/go version)",
-      "Bash(log stream:*)"
+      "Bash(log stream:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(# 获取版本信息\nVERSION=$(defaults read \"\"$(pwd)/build/export/Janitor.app/Contents/Info.plist\"\" CFBundleShortVersionString 2>/dev/null || echo \"\"1.0.0\"\")\necho \"\"版本: $VERSION\"\"\n\n# 清理之前的DMG文件\nrm -f build/Janitor*.dmg\nrm -rf build/dmg-temp\n\n# 创建临时DMG目录\nmkdir -p build/dmg-temp\ncp -R build/export/Janitor.app build/dmg-temp/\nln -sf /Applications build/dmg-temp/Applications\n\n# 创建DMG文件\nhdiutil create -volname \"\"Janitor\"\" \\\n    -srcfolder build/dmg-temp \\\n    -ov -format UDZO \\\n    build/Janitor-${VERSION}.dmg\n\n# 清理临时目录\nrm -rf build/dmg-temp\n\necho \"\"DMG创建完成: build/Janitor-${VERSION}.dmg\"\")",
+      "Bash(gh:*)",
+      "Bash(# 检查git status\ngit status)"
     ],
     "deny": []
   }
