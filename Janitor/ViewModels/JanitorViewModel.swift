@@ -53,22 +53,28 @@ class JanitorViewModel: ObservableObject {
         guard !isScanning && !scanDirectories.isEmpty else { return }
         
         Task {
-            isScanning = true
-            scanProgress = 0.0
-            errorMessage = nil
-            projects.removeAll()
+            await MainActor.run {
+                isScanning = true
+                scanProgress = 0.0
+                errorMessage = nil
+                projects.removeAll()
+                totalCacheSize = 0
+                currentScanActivity = "准备开始扫描..."
+            }
             
             do {
-                currentScanActivity = "开始扫描项目..."
                 try await performScan()
-                currentScanActivity = "扫描完成"
-                scanProgress = 1.0
             } catch {
-                errorMessage = "扫描失败: \(error.localizedDescription)"
+                await MainActor.run {
+                    errorMessage = "扫描失败: \(error.localizedDescription)"
+                    currentScanActivity = "扫描失败"
+                }
                 print("Scan error: \(error)")
             }
             
-            isScanning = false
+            await MainActor.run {
+                isScanning = false
+            }
         }
     }
     
@@ -102,18 +108,27 @@ class JanitorViewModel: ObservableObject {
         let progressStep = 1.0 / Double(languages.count)
         
         for (index, language) in languages.enumerated() {
-            currentScanActivity = "扫描 \(language.rawValue) 项目..."
-            scanProgress = Double(index) * progressStep
+            await MainActor.run {
+                currentScanActivity = "扫描 \(language.rawValue) 项目..."
+                scanProgress = Double(index) * progressStep
+            }
             
             let languageProjects = try await scanProjectsForLanguage(language)
-            projects.append(contentsOf: languageProjects)
             
-            // 模拟扫描耗时
-            try await Task.sleep(nanoseconds: 500_000_000) // 0.5秒
+            await MainActor.run {
+                projects.append(contentsOf: languageProjects)
+            }
+            
+            // 模拟扫描耗时以显示进度
+            try await Task.sleep(nanoseconds: 800_000_000) // 0.8秒
         }
         
-        // 计算总缓存大小
-        totalCacheSize = projects.reduce(0) { $0 + $1.cacheSize }
+        await MainActor.run {
+            // 计算总缓存大小
+            totalCacheSize = projects.reduce(0) { $0 + $1.cacheSize }
+            currentScanActivity = "扫描完成，共发现 \(projects.count) 个项目"
+            scanProgress = 1.0
+        }
     }
     
     private func scanProjectsForLanguage(_ language: ProjectLanguage) async throws -> [Project] {

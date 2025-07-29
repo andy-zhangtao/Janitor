@@ -179,24 +179,38 @@ struct ScanProgressView: View {
     @ObservedObject var viewModel: JanitorViewModel
     
     var body: some View {
-        VStack(spacing: 20) {
-            ProgressView(value: viewModel.scanProgress)
-                .progressViewStyle(CircularProgressViewStyle())
-                .scaleEffect(2.0)
+        VStack(spacing: 30) {
+            // 扫描图标动画
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 60))
+                .foregroundColor(.blue)
+                .rotationEffect(.degrees(viewModel.isScanning ? 360 : 0))
+                .animation(.linear(duration: 2).repeatForever(autoreverses: false), value: viewModel.isScanning)
             
-            Text("Scanning...")
-                .font(.title2)
-                .fontWeight(.medium)
-            
-            Text(viewModel.currentScanActivity)
-                .font(.body)
-                .foregroundColor(.secondary)
-            
-            Text("\(Int(viewModel.scanProgress * 100))% Complete")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            VStack(spacing: 16) {
+                Text("扫描进行中...")
+                    .font(.title2)
+                    .fontWeight(.medium)
+                
+                Text(viewModel.currentScanActivity)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                // 进度条
+                VStack(spacing: 8) {
+                    ProgressView(value: viewModel.scanProgress, total: 1.0)
+                        .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                        .frame(width: 300)
+                    
+                    Text("\(Int(viewModel.scanProgress * 100))% 完成")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
         .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
