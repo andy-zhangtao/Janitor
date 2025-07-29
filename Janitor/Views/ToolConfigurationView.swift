@@ -49,6 +49,11 @@ struct ToolConfigurationView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     
+                    Button("🔒 权限帮助") {
+                        showPermissionHelp()
+                    }
+                    .buttonStyle(.bordered)
+                    
                     Spacer()
                     
                     Button("重置为默认") {
@@ -61,6 +66,10 @@ struct ToolConfigurationView: View {
                 Text("💡 如果诊断显示工具未找到，请使用\"快速检测工具\"或手动指定路径")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                
+                Text("🔒 如果手动指定路径后仍无法访问，请点击\"权限帮助\"")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
             
             Spacer()
@@ -68,7 +77,7 @@ struct ToolConfigurationView: View {
         .padding()
         .fileImporter(
             isPresented: $showingFilePicker,
-            allowedContentTypes: [.executable, .unixExecutable],
+            allowedContentTypes: [.executable, .unixExecutable, .item],
             allowsMultipleSelection: false
         ) { result in
             handleFileSelection(result, for: selectedTool)
@@ -78,6 +87,37 @@ struct ToolConfigurationView: View {
     private func resetToDefaults() {
         for tool in toolSettings.getSupportedTools() {
             toolSettings.enableAutoDetect(tool)
+        }
+    }
+    
+    private func showPermissionHelp() {
+        let alert = NSAlert()
+        alert.messageText = "沙盒权限配置帮助"
+        alert.informativeText = """
+        如果您的开发工具安装在以下路径之外，可能需要额外配置：
+        
+        ✅ 已支持的路径：
+        • /opt/homebrew/（Homebrew Apple Silicon）
+        • /usr/local/（Homebrew Intel）
+        • /usr/bin/, /bin/（系统路径）
+        • ~/.cargo/, ~/.local/, ~/.pyenv/ 等用户目录
+        
+        🔧 解决方案：
+        1. 使用"浏览..."按钮手动选择工具路径
+        2. 在系统设置 > 隐私与安全 > 完整磁盘访问权限中添加Janitor
+        3. 考虑将工具安装到标准路径（推荐使用Homebrew）
+        
+        💡 提示：通过文件选择器选择的工具会自动获得访问权限
+        """
+        alert.addButton(withTitle: "了解")
+        alert.addButton(withTitle: "打开系统设置")
+        
+        let response = alert.runModal()
+        if response == .alertSecondButtonReturn {
+            // 打开系统设置的隐私与安全页面
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+                NSWorkspace.shared.open(url)
+            }
         }
     }
     
@@ -117,7 +157,34 @@ struct ToolConfigurationView: View {
         switch result {
         case .success(let urls):
             if let url = urls.first {
+                // 开始访问安全范围资源
+                let accessing = url.startAccessingSecurityScopedResource()
+                
+                // 存储路径
                 toolSettings.setToolPath(tool, path: url.path)
+                
+                // 保存书签以便后续访问
+                do {
+                    let bookmarkData = try url.bookmarkData(
+                        options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
+                        includingResourceValuesForKeys: nil,
+                        relativeTo: nil
+                    )
+                    
+                    // 保存书签到UserDefaults
+                    UserDefaults.standard.set(bookmarkData, forKey: "bookmark_\(tool)")
+                    print("✅ 已保存工具 \(tool) 的访问权限书签")
+                    
+                } catch {
+                    print("⚠️ 无法创建书签: \(error.localizedDescription)")
+                }
+                
+                // 注意：这里不能立即stopAccessingSecurityScopedResource
+                // 因为我们需要保持访问权限用于后续的命令执行
+                // 实际使用时会通过书签重新获取访问权限
+                if accessing {
+                    url.stopAccessingSecurityScopedResource()
+                }
             }
         case .failure(let error):
             print("文件选择错误: \(error)")
@@ -275,10 +342,10 @@ struct ToolConfigurationRow: View {
                 } else {
                     await MainActor.run {
                         if toolSettings.isAutoDetectEnabled(tool) {
-                            testResult = "❌ 自动检测失败\n工具未安装或不在PATH中"
+                            testResult = "❌ 自动检测失败\n工具未安装或不在PATH中\n💡 尝试手动指定路径"
                         } else {
                             let userPath = toolSettings.toolPaths[tool] ?? ""
-                            testResult = "❌ 路径无效\n\(userPath)"
+                            testResult = "❌ 路径无效\n\(userPath)\n💡 可能需要完整磁盘访问权限"
                         }
                         isTestingTool = false
                     }

@@ -28,6 +28,21 @@
 		<string>/usr/local/</string>
 		<string>/usr/bin/</string>
 		<string>/bin/</string>
+		<string>/sbin/</string>
+		<string>/usr/sbin/</string>
+		<string>/opt/</string>
+		<string>/Library/Frameworks/Python.framework/</string>
+		<string>/System/Library/Frameworks/Python.framework/</string>
+		<string>/Applications/Python*/</string>
+		<string>/Applications/Xcode.app/Contents/Developer/usr/bin/</string>
+		<string>/Users/*/go/</string>
+		<string>/Users/*/.cargo/</string>
+		<string>/Users/*/.local/</string>
+		<string>/Users/*/.pyenv/</string>
+		<string>/Users/*/.rbenv/</string>
+		<string>/Users/*/.nvm/</string>
+		<string>/Users/*/anaconda*/</string>
+		<string>/Users/*/miniconda*/</string>
 	</array>
 </dict>
 </plist>

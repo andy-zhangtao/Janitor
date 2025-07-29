@@ -455,6 +455,12 @@ class CommandExecutor {
             if let userPath = toolSettings.toolPaths[command], !userPath.isEmpty {
                 print("🎯 检查用户配置路径: \(userPath)")
                 
+                // 尝试通过书签访问用户选择的文件
+                if let bookmarkUrl = restoreBookmarkAccess(for: command) {
+                    print("📖 通过书签访问: \(bookmarkUrl.path)")
+                    return bookmarkUrl.path
+                }
+                
                 // 在沙盒环境中，isExecutableFile 可能不准确，所以我们返回用户配置的路径
                 // 让实际执行时去验证是否可用
                 if FileManager.default.fileExists(atPath: userPath) {
@@ -649,6 +655,47 @@ class CommandExecutor {
             } else {
                 return FileManager.default.fileExists(atPath: path)
             }
+        }
+    }
+    
+    // MARK: - 书签访问支持
+    
+    /// 通过书签恢复对用户选择文件的访问权限
+    private func restoreBookmarkAccess(for tool: String) -> URL? {
+        guard let bookmarkData = UserDefaults.standard.data(forKey: "bookmark_\(tool)") else {
+            return nil
+        }
+        
+        do {
+            var isStale = false
+            let url = try URL(
+                resolvingBookmarkData: bookmarkData,
+                options: [.withSecurityScope, .withoutUI],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            )
+            
+            if isStale {
+                print("⚠️ 书签已过期，需要重新选择文件: \(tool)")
+                // 可以考虑清除过期的书签
+                UserDefaults.standard.removeObject(forKey: "bookmark_\(tool)")
+                return nil
+            }
+            
+            // 开始访问安全范围资源
+            guard url.startAccessingSecurityScopedResource() else {
+                print("❌ 无法开始访问安全范围资源: \(tool)")
+                return nil
+            }
+            
+            // 注意：调用者需要在使用完毕后调用 stopAccessingSecurityScopedResource()
+            print("✅ 成功恢复书签访问: \(url.path)")
+            return url
+            
+        } catch {
+            print("❌ 恢复书签失败: \(error.localizedDescription)")
+            UserDefaults.standard.removeObject(forKey: "bookmark_\(tool)")
+            return nil
         }
     }
 }
