@@ -43,12 +43,6 @@ class FileSystemScanner {
     func scanProjects(in directories: [URL], for language: ProjectLanguage) async throws -> [Project] {
         var allProjects: [Project] = []
         
-        // 临时：为了演示进度条，添加一些模拟项目
-        let mockProjects = generateMockProjects(for: language, in: directories)
-        if !mockProjects.isEmpty {
-            return mockProjects
-        }
-        
         for directory in directories {
             // 验证目录是否存在且可访问
             guard fileManager.fileExists(atPath: directory.path) else {
@@ -158,6 +152,10 @@ class FileSystemScanner {
     
     private func findProjectFiles(named fileName: String, in directory: URL) async throws -> [URL] {
         var projectFiles: [URL] = []
+        var scannedCount = 0
+        let maxScanCount = 5000 // 限制扫描文件数量，避免过长时间
+        let startTime = Date()
+        let maxScanTime: TimeInterval = 10.0 // 最大扫描时间10秒
         
         let resourceKeys: [URLResourceKey] = [
             .isDirectoryKey,
@@ -180,13 +178,33 @@ class FileSystemScanner {
         }
         
         for case let fileURL as URL in enumerator {
-            let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
+            scannedCount += 1
             
-            if resourceValues.isDirectory == false && resourceValues.name == fileName {
-                projectFiles.append(fileURL)
+            // 检查扫描限制
+            if scannedCount > maxScanCount {
+                print("⚠️ 达到最大扫描文件数限制 (\(maxScanCount))，停止扫描")
+                break
+            }
+            
+            if Date().timeIntervalSince(startTime) > maxScanTime {
+                print("⚠️ 达到最大扫描时间限制 (\(maxScanTime)秒)，停止扫描")
+                break
+            }
+            
+            do {
+                let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
+                
+                if resourceValues.isDirectory == false && resourceValues.name == fileName {
+                    projectFiles.append(fileURL)
+                    print("✅ 发现项目文件: \(fileURL.path)")
+                }
+            } catch {
+                // 忽略单个文件的错误
+                continue
             }
         }
         
+        print("📊 扫描统计: 检查了 \(scannedCount) 个文件，发现 \(projectFiles.count) 个 \(fileName) 项目")
         return projectFiles
     }
     
@@ -573,97 +591,3 @@ enum DirectoryValidationResult {
     }
 }
 
-// MARK: - FileSystemScanner Extension for Mock Data
-extension FileSystemScanner {
-    
-    /// 生成模拟项目数据用于演示
-    func generateMockProjects(for language: ProjectLanguage, in directories: [URL]) -> [Project] {
-        guard !directories.isEmpty else { return [] }
-        
-        let baseDirectory = directories.first!
-        
-        switch language {
-        case .go:
-            return [
-                Project(
-                    name: "go-api-server",
-                    path: baseDirectory.appendingPathComponent("go-api-server"),
-                    language: .go,
-                    lastModified: Date().addingTimeInterval(-2 * 24 * 3600), // 2天前
-                    dependencies: [
-                        Dependency(name: "gin-gonic/gin", version: "v1.9.1", size: 15 * 1024 * 1024, cachePath: nil, isOrphaned: false),
-                        Dependency(name: "gorm.io/gorm", version: "v1.25.4", size: 12 * 1024 * 1024, cachePath: nil, isOrphaned: false)
-                    ],
-                    cacheSize: 180 * 1024 * 1024 // 180MB
-                ),
-                Project(
-                    name: "microservice-toolkit",
-                    path: baseDirectory.appendingPathComponent("microservice-toolkit"),
-                    language: .go,
-                    lastModified: Date().addingTimeInterval(-5 * 24 * 3600), // 5天前
-                    dependencies: [
-                        Dependency(name: "grpc.io/grpc", version: "v1.58.3", size: 8 * 1024 * 1024, cachePath: nil, isOrphaned: false),
-                        Dependency(name: "prometheus/client_golang", version: "v1.17.0", size: 5 * 1024 * 1024, cachePath: nil, isOrphaned: false)
-                    ],
-                    cacheSize: 95 * 1024 * 1024 // 95MB
-                )
-            ]
-        case .nodejs:
-            return [
-                Project(
-                    name: "react-dashboard",
-                    path: baseDirectory.appendingPathComponent("react-dashboard"),
-                    language: .nodejs,
-                    lastModified: Date().addingTimeInterval(-1 * 24 * 3600), // 1天前
-                    dependencies: [
-                        Dependency(name: "react", version: "18.2.0", size: 25 * 1024 * 1024, cachePath: nil, isOrphaned: false),
-                        Dependency(name: "typescript", version: "5.2.2", size: 18 * 1024 * 1024, cachePath: nil, isOrphaned: false),
-                        Dependency(name: "vite", version: "4.4.9", size: 12 * 1024 * 1024, cachePath: nil, isOrphaned: false)
-                    ],
-                    cacheSize: 320 * 1024 * 1024 // 320MB
-                )
-            ]
-        case .python:
-            return [
-                Project(
-                    name: "ml-pipeline",
-                    path: baseDirectory.appendingPathComponent("ml-pipeline"),
-                    language: .python,
-                    lastModified: Date().addingTimeInterval(-3 * 24 * 3600), // 3天前
-                    dependencies: [
-                        Dependency(name: "pandas", version: "2.1.1", size: 45 * 1024 * 1024, cachePath: nil, isOrphaned: false),
-                        Dependency(name: "scikit-learn", version: "1.3.0", size: 38 * 1024 * 1024, cachePath: nil, isOrphaned: false),
-                        Dependency(name: "numpy", version: "1.25.2", size: 22 * 1024 * 1024, cachePath: nil, isOrphaned: false)
-                    ],
-                    cacheSize: 450 * 1024 * 1024 // 450MB
-                ),
-                Project(
-                    name: "django-backend",
-                    path: baseDirectory.appendingPathComponent("django-backend"),
-                    language: .python,
-                    lastModified: Date().addingTimeInterval(-7 * 24 * 3600), // 7天前
-                    dependencies: [
-                        Dependency(name: "Django", version: "4.2.6", size: 28 * 1024 * 1024, cachePath: nil, isOrphaned: false),
-                        Dependency(name: "django-rest-framework", version: "3.14.0", size: 15 * 1024 * 1024, cachePath: nil, isOrphaned: false)
-                    ],
-                    cacheSize: 120 * 1024 * 1024 // 120MB
-                )
-            ]
-        case .rust:
-            return [
-                Project(
-                    name: "performance-analyzer",
-                    path: baseDirectory.appendingPathComponent("performance-analyzer"),
-                    language: .rust,
-                    lastModified: Date().addingTimeInterval(-4 * 24 * 3600), // 4天前
-                    dependencies: [
-                        Dependency(name: "tokio", version: "1.32.0", size: 32 * 1024 * 1024, cachePath: nil, isOrphaned: false),
-                        Dependency(name: "serde", version: "1.0.188", size: 18 * 1024 * 1024, cachePath: nil, isOrphaned: false),
-                        Dependency(name: "clap", version: "4.4.6", size: 14 * 1024 * 1024, cachePath: nil, isOrphaned: false)
-                    ],
-                    cacheSize: 280 * 1024 * 1024 // 280MB
-                )
-            ]
-        }
-    }
-}

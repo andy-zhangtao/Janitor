@@ -117,10 +117,20 @@ class JanitorViewModel: ObservableObject {
             
             await MainActor.run {
                 projects.append(contentsOf: languageProjects)
+                
+                // 更新进度（包含当前语言的完成进度）
+                let currentLanguageProgress = Double(index + 1) * progressStep
+                scanProgress = currentLanguageProgress
+                
+                if !languageProjects.isEmpty {
+                    currentScanActivity = "发现 \(languageProjects.count) 个 \(language.rawValue) 项目"
+                } else {
+                    currentScanActivity = "未发现 \(language.rawValue) 项目"
+                }
             }
             
-            // 模拟扫描耗时以显示进度
-            try await Task.sleep(nanoseconds: 800_000_000) // 0.8秒
+            // 给用户一点时间看到进度更新
+            try await Task.sleep(nanoseconds: 300_000_000) // 0.3秒
         }
         
         await MainActor.run {
