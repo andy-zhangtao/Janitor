@@ -60,3 +60,12 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Build artifacts (Makefile)
+build/
+DerivedData/
+*.dmg
+*.xcarchive
+
+# Export options (contains team ID)
+exportOptions.plist

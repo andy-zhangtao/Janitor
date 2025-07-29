@@ -1,7 +1,18 @@
 {
   "colors" : [
     {
+      "color" : {
+        "platform" : "osx",
+        "reference" : "keyboardFocusIndicatorColor"
+      },
       "idiom" : "universal"
+    },
+    {
+      "color" : {
+        "platform" : "osx",
+        "reference" : "keyboardFocusIndicatorColor"
+      },
+      "idiom" : "mac"
     }
   ],
   "info" : {
