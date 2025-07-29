@@ -18,5 +18,16 @@
 	<true/>
 	<key>com.apple.security.cs.disable-executable-page-protection</key>
 	<true/>
+	<key>com.apple.security.files.all</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
+	<array>
+		<string>/opt/homebrew/</string>
+		<string>/usr/local/</string>
+		<string>/usr/bin/</string>
+		<string>/bin/</string>
+	</array>
 </dict>
 </plist>

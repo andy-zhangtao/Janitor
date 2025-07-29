@@ -117,16 +117,56 @@ class CommandExecutor {
     
     /// 检查命令是否存在
     func commandExists(_ command: String) async -> Bool {
+        print("🔍 检查命令是否存在: \(command)")
+        
         // 首先尝试直接查找
-        if let _ = await findCommandPath(command) {
-            return true
+        guard let foundPath = await findCommandPath(command) else {
+            print("❌ 未找到命令: \(command)")
+            return false
         }
         
-        // 如果直接查找失败，使用which命令
+        print("📍 找到路径: \(foundPath)")
+        
+        // 通过实际尝试执行命令来验证，而不是依赖文件权限检查
+        // 这样可以绕过沙盒的限制
+        return await testCommandExecution(command, at: foundPath)
+    }
+    
+    /// 测试命令是否能实际执行
+    private func testCommandExecution(_ command: String, at path: String) async -> Bool {
         do {
-            let result = try await executeCommand("which", arguments: [command])
-            return !result.output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            // 使用现有的 executeCommand 方法，它有完整的环境配置
+            let versionArgs: [String]
+            switch command {
+            case "go":
+                versionArgs = ["version"]
+            case "npm":
+                versionArgs = ["--version"]
+            case "pip":
+                versionArgs = ["--version"]
+            case "cargo":
+                versionArgs = ["--version"]
+            default:
+                versionArgs = ["--version"]
+            }
+            
+            let result = try await executeCommand(command, arguments: versionArgs, timeout: 3.0)
+            let success = result.isSuccess
+            print("🧪 命令执行测试 \(command): \(success ? "✅ 成功" : "❌ 失败(退出码: \(result.exitCode))")")
+            
+            if success {
+                let output = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !output.isEmpty {
+                    print("📋 版本信息: \(output.components(separatedBy: .newlines).first ?? output)")
+                }
+            } else if !result.error.isEmpty {
+                print("❌ 错误信息: \(result.error)")
+            }
+            
+            return success
+            
         } catch {
+            print("🧪 命令执行测试失败 \(command): \(error.localizedDescription)")
             return false
         }
     }
@@ -413,13 +453,22 @@ class CommandExecutor {
         // 首先检查用户配置的路径
         if !toolSettings.isAutoDetectEnabled(command) {
             if let userPath = toolSettings.toolPaths[command], !userPath.isEmpty {
-                if FileManager.default.isExecutableFile(atPath: userPath) {
+                print("🎯 检查用户配置路径: \(userPath)")
+                
+                // 在沙盒环境中，isExecutableFile 可能不准确，所以我们返回用户配置的路径
+                // 让实际执行时去验证是否可用
+                if FileManager.default.fileExists(atPath: userPath) {
+                    print("✅ 用户配置路径存在: \(userPath)")
                     return userPath
+                } else {
+                    print("❌ 用户配置路径不存在: \(userPath)")
+                    return userPath // 仍然返回，让执行时处理错误
                 }
             }
         }
         
-        // 然后使用默认搜索路径
+        // 如果是自动检测模式，使用默认搜索路径
+        print("🔍 使用自动检测模式搜索命令: \(command)")
         let searchPaths = [
             "/usr/local/bin/\(command)",
             "/usr/bin/\(command)",
@@ -431,11 +480,14 @@ class CommandExecutor {
         ]
         
         for path in searchPaths {
-            if FileManager.default.isExecutableFile(atPath: path) {
+            // 使用文件存在检查代替可执行检查，因为沙盒限制
+            if FileManager.default.fileExists(atPath: path) {
+                print("✅ 在自动检测中找到: \(path)")
                 return path
             }
         }
         
+        print("❌ 未找到命令: \(command)")
         return nil
     }
     
@@ -458,8 +510,10 @@ class CommandExecutor {
             // 检查用户是否配置了特定路径
             if !toolSettings.isAutoDetectEnabled(tool) {
                 if let userPath = toolSettings.toolPaths[tool], !userPath.isEmpty {
-                    if FileManager.default.isExecutableFile(atPath: userPath) {
-                        toolInfo += "🎯 用户配置: \(userPath) ✅"
+                    if FileManager.default.fileExists(atPath: userPath) {
+                        // 进一步测试是否可执行
+                        let canExecute = await testCommandExecution(tool, at: userPath)
+                        toolInfo += "🎯 用户配置: \(userPath) \(canExecute ? "✅" : "⚠️ (存在但可能无权限)")"
                     } else {
                         toolInfo += "🎯 用户配置: \(userPath) ❌ (文件不存在)"
                     }
@@ -517,10 +571,36 @@ class CommandExecutor {
             }
             
             if result.isSuccess {
-                // 简单提取版本号
                 let output = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
                 let lines = output.components(separatedBy: .newlines)
-                return lines.first?.components(separatedBy: " ").dropFirst().first
+                
+                // 根据不同工具解析版本号
+                switch tool {
+                case "go":
+                    // go version go1.21.0 darwin/arm64
+                    let components = lines.first?.components(separatedBy: " ") ?? []
+                    if components.count >= 3 {
+                        let versionWithPrefix = components[2]
+                        return versionWithPrefix.replacingOccurrences(of: "go", with: "")
+                    }
+                case "npm":
+                    // 直接是版本号
+                    return lines.first
+                case "pip":
+                    // pip 23.0.1 from /usr/local/lib/python3.11/site-packages/pip
+                    let components = lines.first?.components(separatedBy: " ") ?? []
+                    if components.count >= 2 {
+                        return components[1]
+                    }
+                case "cargo":
+                    // cargo 1.70.0 (ec8a8a0ca 2023-04-25)
+                    let components = lines.first?.components(separatedBy: " ") ?? []
+                    if components.count >= 2 {
+                        return components[1]
+                    }
+                default:
+                    return lines.first
+                }
             }
         } catch {
             // 版本检测失败不是大问题
@@ -564,8 +644,11 @@ class CommandExecutor {
         }
         
         return possiblePaths.filter { path in
-            FileManager.default.isExecutableFile(atPath: path) ||
-            (path.contains("python3 -m pip") && FileManager.default.fileExists(atPath: "/usr/bin/python3"))
+            if path.contains("python3 -m pip") {
+                return FileManager.default.fileExists(atPath: "/usr/bin/python3")
+            } else {
+                return FileManager.default.fileExists(atPath: path)
+            }
         }
     }
 }

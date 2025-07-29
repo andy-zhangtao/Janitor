@@ -8,7 +8,15 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(open:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(make:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(open build/DerivedData/Build/Products/Debug/Janitor.app)",
+      "Bash(ls:*)",
+      "Bash(/opt/homebrew/bin/go version)",
+      "Bash(log stream:*)"
     ],
     "deny": []
   }

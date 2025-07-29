@@ -130,6 +130,9 @@ struct ToolConfigurationRow: View {
     @ObservedObject var toolSettings: ToolSettings
     let onSelectPath: () -> Void
     
+    @State private var testResult: String? = nil
+    @State private var isTestingTool = false
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let info = toolSettings.getToolInfo(tool) {
@@ -187,6 +190,24 @@ struct ToolConfigurationRow: View {
                                 .padding(.leading, 20)
                         }
                     }
+                    
+                    Spacer()
+                    
+                    // 测试按钮
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Button(isTestingTool ? "测试中..." : "🧪 测试") {
+                            testTool()
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isTestingTool)
+                        
+                        if let result = testResult {
+                            Text(result)
+                                .font(.caption)
+                                .foregroundColor(result.contains("✅") ? .green : .red)
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
                 }
                 .padding(.leading, 24)
                 
@@ -226,6 +247,109 @@ struct ToolConfigurationRow: View {
                     .padding(.top, 8)
             }
         }
+    }
+    
+    private func testTool() {
+        isTestingTool = true
+        testResult = nil
+        
+        Task {
+            let commandExecutor = CommandExecutor()
+            
+            do {
+                // 检查工具是否存在
+                let exists = await commandExecutor.commandExists(tool)
+                
+                if exists {
+                    // 尝试获取版本信息来进一步验证
+                    let version = await getToolVersion(tool, commandExecutor: commandExecutor)
+                    
+                    await MainActor.run {
+                        if let version = version {
+                            testResult = "✅ 可用 (版本: \(version))"
+                        } else {
+                            testResult = "✅ 工具存在但无法获取版本"
+                        }
+                        isTestingTool = false
+                    }
+                } else {
+                    await MainActor.run {
+                        if toolSettings.isAutoDetectEnabled(tool) {
+                            testResult = "❌ 自动检测失败\n工具未安装或不在PATH中"
+                        } else {
+                            let userPath = toolSettings.toolPaths[tool] ?? ""
+                            testResult = "❌ 路径无效\n\(userPath)"
+                        }
+                        isTestingTool = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    testResult = "❌ 测试失败: \(error.localizedDescription)"
+                    isTestingTool = false
+                }
+            }
+        }
+    }
+    
+    private func getToolVersion(_ tool: String, commandExecutor: CommandExecutor) async -> String? {
+        do {
+            let result: CommandResult
+            
+            switch tool {
+            case "go":
+                result = try await commandExecutor.executeCommand("go", arguments: ["version"])
+            case "npm":
+                result = try await commandExecutor.executeCommand("npm", arguments: ["--version"])
+            case "pip":
+                result = try await commandExecutor.executeCommand("pip", arguments: ["--version"])
+            case "cargo":
+                result = try await commandExecutor.executeCommand("cargo", arguments: ["--version"])
+            default:
+                return nil
+            }
+            
+            if result.isSuccess {
+                let output = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+                let lines = output.components(separatedBy: .newlines)
+                
+                // 提取版本号
+                print("🔍 解析版本号 - 工具: \(tool), 输出: \(output)")
+                switch tool {
+                case "go":
+                    // go version go1.21.0 darwin/arm64
+                    let components = lines.first?.components(separatedBy: " ") ?? []
+                    print("🔍 Go 版本解析 - 组件: \(components)")
+                    if components.count >= 3 {
+                        let versionWithPrefix = components[2]
+                        let version = versionWithPrefix.replacingOccurrences(of: "go", with: "")
+                        print("🔍 Go 版本解析结果: \(version)")
+                        return version
+                    }
+                case "npm":
+                    // 直接是版本号
+                    return lines.first
+                case "pip":
+                    // pip 23.0.1 from /usr/local/lib/python3.11/site-packages/pip
+                    let components = lines.first?.components(separatedBy: " ") ?? []
+                    if components.count >= 2 {
+                        return components[1]
+                    }
+                case "cargo":
+                    // cargo 1.70.0 (ec8a8a0ca 2023-04-25)
+                    let components = lines.first?.components(separatedBy: " ") ?? []
+                    if components.count >= 2 {
+                        return components[1]
+                    }
+                default:
+                    return lines.first
+                }
+            }
+        } catch {
+            print("获取版本失败: \(error)")
+        }
+        
+        return nil
     }
 }
 
